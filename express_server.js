@@ -42,6 +42,12 @@ app.post('/urls/:id/delete', (req, res) => {
   delete urlDatabase[shortURL];
   res.redirect('/urls');
 });
+app.post('/login', (req, res) => {
+  let username = req.body.username
+  res.cookie("username", username)
+  res.redirect('/urls');
+});
+
 app.post('/urls/:id/edit', (req, res) => {
   const shortURL = req.params.id;
   urlDatabase[shortURL] = req.body.longURL
