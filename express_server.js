@@ -56,7 +56,7 @@ app.post('/login', (req, res) => {
   res.redirect('/urls');
 });
 
-//route handler for logout
+//POST route for /logout which clears the cookie and redirects the user to /urls page
 app.post('/logout', (req, res) => {
   let username = req.body.username
   res.clearCookie("username", username)
@@ -73,6 +73,14 @@ app.get("/u/:id", (req, res) => {
   const shortURL = req.params.id;
   const longURL = urlDatabase[shortURL];
   res.redirect(longURL);
+});
+
+//route handler to display register page
+app.get("/register", (req, res) => {
+  let templateVars = {
+    username: req.cookies["username"],
+  };
+  res.render("register",templateVars);
 });
 
 app.get("/", (req, res) => {
