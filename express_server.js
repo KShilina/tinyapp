@@ -1,35 +1,18 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
+const { findUser, users, generateRandomString } = require("./helper/user");
 const app = express();
 const PORT = 8080; // default port 8080
 
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
-
+// set view engine to EJS
 app.set("view engine", "ejs");
 
 const urlDatabase = {
   b2xVn2: "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com",
 };
-
-const users = {
-  userRandomID: {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: "purple-monkey-dinosaur",
-  },
-  user2RandomID: {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk",
-  },
-};
-
-// function to generate random short URL
-function generateRandomString() {
-  return (result = Math.random().toString(36).substring(2, 8));
-}
 
 app.get("/urls", (req, res) => {
   let userID = req.cookies["user_id"];
@@ -72,12 +55,13 @@ app.post("/urls/:id/delete", (req, res) => {
 
 //route handler for login
 app.post("/login", (req, res) => {
-  let username = req.body.username;
-  const userObj = Object.entries(users).find(
-    ([id, user]) => user.email === username
-  );
-  console.log("Test1:", users);
-  console.log("Test1:", userObj);
+  let userEmail = req.body.email;
+  //using helper function to find the user in userObj
+  const userObj = findUser(userEmail);
+  if (!userObj) return res.status(403).send("Email is not exist.");
+  if (userObj[1].password !== req.body.password)
+    return res.status(403).send("Password is not correct.");
+
   res.cookie("user_id", userObj[0]);
   //console.log("Request cookies:",req.cookies);
   res.redirect("/urls");
@@ -87,7 +71,7 @@ app.post("/login", (req, res) => {
 app.post("/logout", (req, res) => {
   console.log("Test", req.body);
   res.clearCookie("user_id");
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 
 app.post("/urls/:id/edit", (req, res) => {
@@ -119,9 +103,8 @@ app.post("/register", (req, res) => {
   }
 
   // userRandomID = id; small object inside the users object = user
-  const userObj = Object.entries(users).find(
-    ([id, user]) => user.email === email
-  );
+  //using helper function to find users in database
+  const userObj = findUser(email);
   const foundEmail = Boolean(userObj);
   if (foundEmail) {
     res.status(400).send("Email is already exist!");
@@ -147,10 +130,10 @@ app.post("/register", (req, res) => {
 app.get("/login", (req, res) => {
   let userID = req.cookies["user_id"];
   let user = users[userID];
-  const templateVars = {user};
+  const templateVars = { user };
 
-  res.render("login", templateVars)
-})
+  res.render("login", templateVars);
+});
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -163,7 +146,7 @@ app.get("/urls.json", (req, res) => {
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
-
+// start server and listen for PORT
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
