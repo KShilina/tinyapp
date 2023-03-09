@@ -18,13 +18,21 @@ app.get("/urls", (req, res) => {
   let userID = req.cookies["user_id"];
   let userData = users[userID];
   const templateVars = { urls: urlDatabase, user: userData };
+  console.log(urlDatabase);
+  if (!userID) {
+    res.redirect("/login");
+  } 
   res.render("urls_index", templateVars);
 });
 
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
+  let userID = req.cookies["user_id"];
   // Add the key-value pair to the database
   urlDatabase[shortURL] = req.body.longURL;
+  if (!userID) {
+    res.send("Not authorized to shorten URLs.");
+  } 
   // Redirect to the newly created short URL page
   res.redirect(`/urls/${shortURL}`);
 });
@@ -33,6 +41,9 @@ app.get("/urls/new", (req, res) => {
   let userID = req.cookies["user_id"];
   let userData = users[userID];
   const templateVars = { urls: urlDatabase, user: userData };
+  if (!userID) {
+    res.redirect("/login");
+  } 
   res.render("urls_new", templateVars);
 });
 
@@ -83,6 +94,9 @@ app.post("/urls/:id/edit", (req, res) => {
 app.get("/u/:id", (req, res) => {
   const shortURL = req.params.id;
   const longURL = urlDatabase[shortURL];
+  if (!longURL){
+    res.send("Short URL is not exist.")
+  }
   res.redirect(longURL);
 });
 
@@ -91,6 +105,9 @@ app.get("/register", (req, res) => {
   let userID = req.cookies["user_id"];
   let userData = users[userID];
   const templateVars = { urls: urlDatabase, user: userData };
+  if (userID) {
+    res.redirect("/urls");
+  } 
   res.render("register", templateVars);
 });
 
@@ -131,8 +148,11 @@ app.get("/login", (req, res) => {
   let userID = req.cookies["user_id"];
   let user = users[userID];
   const templateVars = { user };
-
+if (userID) {
+  res.redirect("/urls");
+} 
   res.render("login", templateVars);
+  
 });
 
 app.get("/", (req, res) => {
