@@ -1,52 +1,34 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
-//const cookieParser = require("cookie-parser");
-const cookieSession = require('cookie-session')
-const { findUser, users, generateRandomString } = require("./helper/user");
+const cookieSession = require("cookie-session");
+const { getUserByEmail, generateRandomString, urlsForUser } = require("./helper/helpers");
+const { users, urlDatabase } = require("./database");
 const app = express();
 const PORT = 8080; // default port 8080
 
-//app.use(cookieParser());
+//middleware
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieSession({
-  name: 'session',
-  keys: ["Ekaterina"],
-  maxAge: 24 * 60 * 60 * 1000 // 24 hours
-}))
+app.use(
+  cookieSession({
+    name: "session",
+    keys: ["Ekaterina"],
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  })
+);
+app.use((req, res, next) => {
+  const userId = req.session.user_id;
+  const user = users[userId];
+  req.user = user;
+  next();
+});
+
 // set view engine to EJS
 app.set("view engine", "ejs");
-
-
-// const urlDatabase = {
-//   b2xVn2: "http://www.lighthouselabs.ca",
-//   "9sm5xK": "http://www.google.com",
-// };
-
-const urlDatabase = {
-  b6UTxQ: {
-    longURL: "https://www.tsn.ca",
-    userID: "userRandomID",
-  },
-  i3BoGr: {
-    longURL: "https://www.google.ca",
-    userID: "userRandomID",
-  },
-};
-
-const urlsForUser = function (id) {
-  const userUrls = {};
-  for (const shortURL in urlDatabase) {
-    if (urlDatabase[shortURL].userID === id) {
-      userUrls[shortURL] = urlDatabase[shortURL];
-    }
-  }
-  return userUrls;
-};
 
 app.get("/urls", (req, res) => {
   let userID = req.session.user_id;
   let userData = users[userID];
-  const templateVars = { urls: urlsForUser(userID), user: userData };
+  const templateVars = { urls: urlsForUser(userID, urlDatabase), user: userData, };
   console.log(urlDatabase);
   if (!userID) {
     res.redirect("/login");
@@ -56,11 +38,15 @@ app.get("/urls", (req, res) => {
 
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
+  if (!req.body.longURL) {
+    return res.send("Please enter a url")
+  }
   let userID = req.session.user_id;
   let newItem = { longURL: req.body.longURL, userID: userID };
   // Add the key-value pair to the database
   // urlDatabase[shortURL] = req.body.longURL;
   urlDatabase[shortURL] = newItem;
+  
   if (!userID) {
     res.send("Not authorized to shorten URLs.");
   }
@@ -90,12 +76,12 @@ app.get("/urls/:id", (req, res) => {
   if (!urlDatabase[shortURL]) {
     return res.send("The URL is not exist.");
   }
-  console.log(urlDatabase);
+  
   if (urlDatabase[shortURL].userID !== userID) {
     return res.send("Not authorise to access URL.");
   }
 
-  // console.log(shortURL);
+  
   const templateVars = {
     id: shortURL,
     longURL: urlDatabase[shortURL].longURL,
@@ -107,17 +93,27 @@ app.get("/urls/:id", (req, res) => {
 
 app.post("/urls/:id/delete", (req, res) => {
   const shortURL = req.params.id;
-  delete urlDatabase[shortURL];
-  let userID = req.session.user_id;//read the cookie
+  let userID = req.session.user_id; //read the cookie
+
+  // Check if the user is logged in
   if (!userID) {
-    return res.send("You are not login.");
+    res.status(401).send("You are not login.");
+    return;
   }
+
+  // Check if the URL with the given ID exists
   if (!urlDatabase[shortURL]) {
-    return res.send("The URL is not exist.");
+    res.status(404).send("The URL is not exist.");
+    return;
   }
+
+  // Check if the user owns the URL they are trying to delete
   if (urlDatabase[shortURL].userID !== userID) {
-    return res.send("Not authorise to access URL.");
+    res.status(403).send("Not authorised to access URL.");
+    return;
   }
+
+  delete urlDatabase[shortURL];
   res.redirect("/urls");
 });
 
@@ -128,7 +124,7 @@ app.post("/login", (req, res) => {
 
   //let userID = res.cookie("user_id", userID);
   //using helper function to find the user in userObj
-  const userObj = findUser(userEmail);
+  const userObj = getUserByEmail(userEmail, users);
   if (!userObj) return res.status(403).send("Email is not exist.");
   if (!bcrypt.compareSync(password, userObj.password)) {
     res.status(403).send("Password is not correct.");
@@ -143,23 +139,27 @@ app.post("/login", (req, res) => {
 
 //POST route for /logout which clears the cookie and redirects the user to /urls page
 app.post("/logout", (req, res) => {
-  console.log("Test", req.body);
-  res.clearCookie("user_id");
+  //console.log("Test", req.body);
+  req.session = null;
   res.redirect("/login");
 });
 
 app.post("/urls/:id/edit", (req, res) => {
   const shortURL = req.params.id;
   let userID = req.session.user_id;
+
   if (!userID) {
     return res.send("You are not login.");
   }
+
   if (!urlDatabase[shortURL]) {
     return res.send("The URL is not exist.");
   }
+
   if (urlDatabase[shortURL].userID !== userID) {
     return res.send("Not authorised to edit URL.");
   }
+  
   urlDatabase[shortURL].longURL = req.body.longURL;
   res.redirect("/urls");
 });
@@ -194,7 +194,7 @@ app.post("/register", (req, res) => {
 
   // userRandomID = id; small object inside the users object = user
   //using helper function to find users in database
-  const userObj = findUser(email);
+  const userObj = getUserByEmail(email, users);
   const foundEmail = Boolean(userObj);
   if (foundEmail) {
     res.status(400).send("Email is already exist!");
@@ -239,6 +239,7 @@ app.get("/urls.json", (req, res) => {
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
+
 // start server and listen for PORT
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
