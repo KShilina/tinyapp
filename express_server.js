@@ -9,15 +9,38 @@ app.use(express.urlencoded({ extended: true }));
 // set view engine to EJS
 app.set("view engine", "ejs");
 
+// const urlDatabase = {
+//   b2xVn2: "http://www.lighthouselabs.ca",
+//   "9sm5xK": "http://www.google.com",
+// };
+
 const urlDatabase = {
-  b2xVn2: "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "userRandomID",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "userRandomID",
+  },
 };
+
+const urlsForUser = function(id) {
+  const userUrls = {};
+  for (const shortURL in urlDatabase) {
+    if (urlDatabase[shortURL].userID === id) {
+      userUrls[shortURL] = urlDatabase[shortURL];
+    }
+  }
+  return userUrls;
+};
+
+
 
 app.get("/urls", (req, res) => {
   let userID = req.cookies["user_id"];
   let userData = users[userID];
-  const templateVars = { urls: urlDatabase, user: userData };
+  const templateVars = { urls: urlsForUser(userID), user: userData };
   console.log(urlDatabase);
   if (!userID) {
     res.redirect("/login");
@@ -28,14 +51,17 @@ app.get("/urls", (req, res) => {
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
   let userID = req.cookies["user_id"];
+  let newItem = {longURL: req.body.longURL, userID: userID}
   // Add the key-value pair to the database
-  urlDatabase[shortURL] = req.body.longURL;
+  // urlDatabase[shortURL] = req.body.longURL;
+  urlDatabase[shortURL] = newItem;
   if (!userID) {
     res.send("Not authorized to shorten URLs.");
   } 
   // Redirect to the newly created short URL page
   res.redirect(`/urls/${shortURL}`);
 });
+
 
 app.get("/urls/new", (req, res) => {
   let userID = req.cookies["user_id"];
@@ -49,18 +75,44 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:id", (req, res) => {
   let userID = req.cookies["user_id"];
+  if (!userID){
+    return res.send("You are not login.");
+  }
+  
   let userData = users[userID];
+  let shortURL = req.params.id
+  console.log(req.params.id);
+  if (!urlDatabase[shortURL]) {
+    return res.send("The URL is not exist.")
+  }
+  console.log(urlDatabase);
+  if (urlDatabase[shortURL].userID !== userID) {
+    return res.send("Not authorise to access URL.")
+  }
+ 
+  // console.log(shortURL);
   const templateVars = {
-    id: req.params.id,
-    longURL: urlDatabase[req.params.id],
+    id: shortURL,
+    longURL: urlDatabase[shortURL].longURL,
     user: userData,
   };
+  
   res.render("urls_show", templateVars);
 });
 
 app.post("/urls/:id/delete", (req, res) => {
   const shortURL = req.params.id;
   delete urlDatabase[shortURL];
+  let userID = req.cookies["user_id"];
+  if (!userID){
+    return res.send("You are not login.");
+  }
+  if (!urlDatabase[shortURL]) {
+    return res.send("The URL is not exist.")
+  }
+  if (urlDatabase[shortURL].userID !== userID) {
+    return res.send("Not authorise to access URL.")
+  }
   res.redirect("/urls");
 });
 
@@ -73,7 +125,8 @@ app.post("/login", (req, res) => {
   if (userObj[1].password !== req.body.password)
     return res.status(403).send("Password is not correct.");
 
-  res.cookie("user_id", userObj[0]);
+  res.cookie("user_id", userObj[0]);//value of the cookie named user_id
+  //console.log("UserObj",userObj);
   //console.log("Request cookies:",req.cookies);
   res.redirect("/urls");
 });
@@ -87,13 +140,23 @@ app.post("/logout", (req, res) => {
 
 app.post("/urls/:id/edit", (req, res) => {
   const shortURL = req.params.id;
-  urlDatabase[shortURL] = req.body.longURL;
+  let userID = req.cookies["user_id"];
+  if (!userID){
+    return res.send("You are not login.");
+  }
+  if (!urlDatabase[shortURL]) {
+    return res.send("The URL is not exist.")
+  }
+  if (urlDatabase[shortURL].userID !== userID) {
+    return res.send("Not authorised to edit URL.")
+  }
+  urlDatabase[shortURL].longURL = req.body.longURL;
   res.redirect("/urls");
 });
 
 app.get("/u/:id", (req, res) => {
   const shortURL = req.params.id;
-  const longURL = urlDatabase[shortURL];
+  const longURL = urlDatabase[shortURL].longURL;
   if (!longURL){
     res.send("Short URL is not exist.")
   }
