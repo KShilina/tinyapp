@@ -12,10 +12,16 @@ const users = {
 };
 
 const findUser = function (userEmail) {
-  const userObj = Object.entries(users).find(
-    ([id, user]) => user.email === userEmail
-  );
-  return userObj;
+  // const userObj = Object.entries(users).find(
+  //   ([id, user]) => user.email === userEmail
+  // );
+  // return userObj;
+  for (const user in users) {
+    if (users[user].email === userEmail){
+      return users[user];
+    }
+  }
+  return null;
 };
 
 // function to generate random short URL
