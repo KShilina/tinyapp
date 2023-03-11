@@ -37,7 +37,7 @@ with authentication protection that reacts appropriately to the user's logged-in
 - cookie-session
 
 ## Getting Started
-- Clone the [repository](git@github.com:KShilina/tinyapp.git)
+- Clone the repository [here](https://github.com/KShilina/tinyapp.git)
 - Install all dependencies (using the `npm install` command).
 - Run the development web server using the `node express_server.js` command.
 - Open the application at [click here](http://localhost:8080)
