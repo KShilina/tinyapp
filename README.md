@@ -14,8 +14,10 @@ TinyApp is a full stack multipage web application built with Node and Express th
 ## Final Product
 
 
-!["screenshot description"](#)
-!["screenshot description"](#)
+!["Register Page"](https://github.com/KShilina/tinyapp/blob/main/docs/register_page.png)
+!["ShortUrls Creator Page"](https://github.com/KShilina/tinyapp/blob/main/docs/shortUrl-creator-page.png)
+!["URLs Page"](https://github.com/KShilina/tinyapp/blob/main/docs/urls-page.png)
+
 
 ## Dependencies
 
@@ -26,7 +28,7 @@ TinyApp is a full stack multipage web application built with Node and Express th
 - cookie-session
 
 ## Getting Started
-- Clone the repository [from here](git@github.com:KShilina/tinyapp.git)
+- Clone the [repository @ git@github.com:KShilina/tinyapp.git](git@github.com:KShilina/tinyapp.git)
 - Install all dependencies (using the `npm install` command).
 - Run the development web server using the `node express_server.js` command.
 - Open the application at [click here](http://localhost:8080)
