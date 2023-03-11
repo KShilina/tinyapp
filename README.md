@@ -14,7 +14,8 @@ TinyApp is a full stack multipage web application built with Node and Express th
 ## Final Product
 
 ### Project DEMO
-!["Project DEMO"](https://github.com/KShilina/tinyapp/blob/main/docs/TinyApp_DEMO.mov)
+
+![ezgif com-optimize](https://user-images.githubusercontent.com/91483856/224504591-b2cf27ce-2a14-4f47-81e4-2557a6642e9d.gif)
 
 
 ### Screenshot of register page
