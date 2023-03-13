@@ -40,6 +40,8 @@ with authentication protection that reacts appropriately to the user's logged-in
 - Clone the repository [here](https://github.com/KShilina/tinyapp.git)
 - Install all dependencies (using the `npm install` command).
 - Run the development web server using the `node express_server.js` command.
+- To start the project `npm start`
+- To run the test `npm run test`
 - Open the application at [click here](http://localhost:8080)
 
 ## Features
